@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BMPI Calculator — Bitcoin Media Pressure Index</title>
+  <meta name="description" content="BMPI Calculator based on GDELT Doc API v2. GitHub Pages ready static project." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hdr">
+      <div class="hdr-tag">Research Tool · GitHub Pages</div>
+      <h1>Bitcoin Media Pressure<br><span>Index Calculator</span></h1>
+      <p class="hdr-sub">
+        Static BMPI calculator for GitHub Pages. It queries GDELT Doc API v2 live and computes BMPI from
+        mention volume and average tone.
+      </p>
+    </header>
+
+    <section class="card">
+      <div class="card-title">How it works</div>
+      <div class="how">
+        <div class="how-step s1">
+          <div class="how-n">01</div>
+          <div class="how-t">Select date</div>
+          <div class="how-d">Any date from 2015 to yesterday</div>
+        </div>
+        <div class="how-step s2">
+          <div class="how-n">02</div>
+          <div class="how-t">Query GDELT API</div>
+          <div class="how-d">Live search of Bitcoin articles via GDELT Doc API v2</div>
+        </div>
+        <div class="how-step s3">
+          <div class="how-n">03</div>
+          <div class="how-t">Aggregate</div>
+          <div class="how-d">Count mentions and compute average tone</div>
+        </div>
+        <div class="how-step s4">
+          <div class="how-n">04</div>
+          <div class="how-t">Compute BMPI</div>
+          <div class="how-d">Apply calibrated formula and return score in [0,1]</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">Parameters</div>
+
+      <div class="date-row">
+        <div class="field">
+          <label for="dateInput">Date</label>
+          <input type="date" id="dateInput" />
+        </div>
+
+        <button class="btn-calc" id="calcBtn" type="button">COMPUTE BMPI</button>
+      </div>
+
+      <div class="preset-block">
+        <div class="preset-label">FILTER PRESET</div>
+        <div class="presets">
+          <button class="preset-btn active" data-preset="balanced" type="button">BALANCED</button>
+          <button class="preset-btn" data-preset="sensitive" type="button">SENSITIVE</button>
+          <button class="preset-btn" data-preset="strong" type="button">STRONG</button>
+        </div>
+      </div>
+
+      <div class="progress" id="progress">
+        <div class="prog-line" id="p1"><div class="dot"></div> Building GDELT API query...</div>
+        <div class="prog-line" id="p2"><div class="dot"></div> Fetching Bitcoin articles from GDELT...</div>
+        <div class="prog-line" id="p3"><div class="dot"></div> Aggregating mentions and tone...</div>
+        <div class="prog-line" id="p4"><div class="dot"></div> Computing BMPI formula...</div>
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+    </section>
+
+    <section class="result card" id="result">
+      <div class="card-title">Result</div>
+
+      <div class="bmpi-display">
+        <div class="bmpi-value" id="bmpiVal">—</div>
+        <div class="bmpi-meta">
+          <div class="bmpi-date" id="bmpiDate">—</div>
+          <div class="bmpi-zone" id="bmpiZone">—</div>
+          <div class="bmpi-desc" id="bmpiDesc">—</div>
+        </div>
+      </div>
+
+      <div class="gauge-wrap">
+        <div class="gauge-labels">
+          <span>0.00 · Calm</span>
+          <span>0.47</span>
+          <span>0.53</span>
+          <span>0.59</span>
+          <span>0.65</span>
+          <span>1.00 · Manipulation</span>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" id="gaugeFill"></div>
+          <div class="gauge-pointer" id="gaugePtr"></div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="stat-label">MENTIONS</div><div class="stat-val" id="statMentions">—</div></div>
+        <div class="stat"><div class="stat-label">AVG TONE</div><div class="stat-val" id="statTone">—</div></div>
+        <div class="stat"><div class="stat-label">Z-MENTIONS</div><div class="stat-val" id="statZ1">—</div></div>
+        <div class="stat"><div class="stat-label">Z-NEG TONE</div><div class="stat-val" id="statZ2">—</div></div>
+        <div class="stat"><div class="stat-label">ARTICLES</div><div class="stat-val" id="statArticles">—</div></div>
+        <div class="stat"><div class="stat-label">PRESET</div><div class="stat-val" id="statPreset">—</div></div>
+      </div>
+
+      <div class="pct-row">
+        <div class="pct-label">BMPI SCALE POSITION</div>
+        <div class="pct-bar-track"><div class="pct-bar-fill" id="pctFill"></div></div>
+        <div class="pct-val" id="pctVal">—</div>
+      </div>
+
+      <div class="formula">
+        z₁ = clip[(mentions − <span>173.3</span>) / <span>256.4</span>, −3, 3]<br />
+        z₂ = clip[(<span>μ_tone − tone</span>) / <span>1.1607</span>, −3, 3]<br />
+        raw = <span>0.60</span>·z₁ + <span>0.40</span>·z₂<br />
+        <strong class="formula-accent">BMPI = σ(raw) = 1 / (1 + e<sup>−raw</sup>)</strong>
+      </div>
+    </section>
+
+    <section class="note">
+      <strong>Data source:</strong>
+      <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a>
+      Doc API v2 — live query, no files stored.<br />
+      <strong>Calibration:</strong> μ_mentions=173.3, σ_mentions=256.4, μ_tone=-0.7214, σ_tone=1.1607.<br />
+      <strong>Deployment:</strong> Works as a static site on GitHub Pages.
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
